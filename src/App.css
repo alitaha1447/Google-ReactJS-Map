@@ -1,0 +1,82 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.mainBox {
+  width: 100%;
+  min-height: 100vh;
+  background-color: rgb(235, 243, 242);
+  padding: 1rem;
+}
+
+.header {
+  width: 100%;
+  border: 2px solid black;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  gap: 1rem;
+  /* spacing between gps and input */
+  height: 70px;
+  /* fixed header height */
+  border-radius: 10px;
+}
+
+.gpsBtn {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gpsIcon {
+  font-size: 1.4rem;
+  color: #e63946;
+}
+
+.inputGroup {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  flex: 1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.6rem 2.5rem 0.6rem 1rem;
+  /* padding for search icon */
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  outline: none;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: #555;
+  cursor: pointer;
+}
+
+.contentBox {
+  margin-top: 1rem;
+  width: 100%;
+  height: calc(100vh - 70px - 3rem);
+  /* remaining height after header */
+  background: #f1f1f1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  overflow: hidden;
+}
