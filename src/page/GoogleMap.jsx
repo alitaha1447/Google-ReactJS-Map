@@ -60,33 +60,39 @@ export default function GoogleMap() {
     };
 
     // Fetch full place details (incl. photos) when you only have place_id
-    const fetchPlaceDetails = (service, placeId) =>
-        new Promise((resolve) => {
-            if (!placeId) return resolve(null);
-            service.getDetails(
-                {
-                    placeId,
-                    fields: [
-                        "name",
-                        "formatted_address",
-                        "rating",
-                        "user_ratings_total",
-                        "photos",
-                        "geometry",
-                        "place_id",
-                    ],
-                },
-                (place, status) => {
-                    if (
-                        status !== window.google.maps.places.PlacesServiceStatus.OK ||
-                        !place
-                    ) {
-                        return resolve(null);
+    const fetchPlaceDetails = (service, placeId) => {
+        console.log('fetching running')
+
+        return (
+            new Promise((resolve) => {
+                if (!placeId) return resolve(null);
+                service.getDetails(
+                    {
+                        placeId,
+                        fields: [
+                            "name",
+                            "formatted_address",
+                            "rating",
+                            "user_ratings_total",
+                            "photos",
+                            "geometry",
+                            "place_id",
+                        ],
+                    },
+                    (place, status) => {
+                        if (
+                            status !== window.google.maps.places.PlacesServiceStatus.OK ||
+                            !place
+                        ) {
+                            return resolve(null);
+                        }
+                        resolve(place);
                     }
-                    resolve(place);
-                }
-            );
-        });
+                );
+            })
+
+        )
+    }
 
     const destInputRef = useRef(null);
     const nearbyInputRef = useRef(null);
@@ -135,14 +141,12 @@ export default function GoogleMap() {
 
 
     function takeCoordinate() {
-        console.log('Fetching coordinates...');
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 // const lat = pos.coords.latitude;
                 // const lon = pos.coords.longitude;
                 // console.log('Latitude:', lat, 'Longitude:', lon);  // Logs lat and lon
                 const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                console.log('loc --> ', loc)
                 if (markerPos) {
                     const distance = calculateDistance(markerPos.lat, markerPos.lng, loc.lat, loc.lng);
                     console.log("Distance moved:", distance, "km");
@@ -151,7 +155,6 @@ export default function GoogleMap() {
                     if (nearbyInputRef.current.value === '') {
                         console.log('taha')
                     }
-                    console.log(typeof nearbyInputRef.current.value)
                     if (distance >= 1) {
                         console.log("Distance is greater than or equal to 1 km, calling runNearbySearch");
 
@@ -190,7 +193,7 @@ export default function GoogleMap() {
     const handlePlay = () => {
         // Only start a new interval if one is not already running
         if (!intervalId) {
-            const id = setInterval(takeCoordinate, 1000);  // Run every 10 seconds
+            const id = setInterval(takeCoordinate, 10000);  // Run every 10 seconds
             setIntervalId(id); // Save the interval ID to state
             console.log("Started fetching coordinates every 10 seconds");
         }
@@ -301,6 +304,7 @@ export default function GoogleMap() {
 
     // ── Initialize Google Autocomplete on the destination input ──────────────
     useEffect(() => {
+        console.log('running continously')
         if (!placesLib || !geometryLib || !destInputRef.current || !window.google || !map) return;
 
         const ac = new window.google.maps.places.Autocomplete(destInputRef.current, {
@@ -358,7 +362,6 @@ export default function GoogleMap() {
 
     // ── Run Nearby Search (Corrected) ────────────────────────────────────────────────
     const runNearbySearch = (query) => {
-        console.log('1')
         if (!placesLib || !map || !window.google || !query?.trim()) return;
 
         const service = new placesLib.PlacesService(map);
@@ -433,12 +436,12 @@ export default function GoogleMap() {
             </div>
         );
     }
-    console.log('defaultPos --> ', defaultPos)
-    console.log('markerPos --> ', markerPos)
+    // console.log('defaultPos --> ', defaultPos)
+    // console.log('markerPos --> ', markerPos)
     // ── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="mainBox">
-            <div className="header" style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            {/* <div className="header" style={{ display: "", gap: 1, alignItems: "center" }}>
                 <button
                     className="gpsBtn"
                     title="Go to my location"
@@ -486,8 +489,8 @@ export default function GoogleMap() {
 
 
                 <div className="inputGroup" style={{
-                    position: "relative",
-                    flex: 1,
+                    // position: "relative",
+                    // flex: 1,
                     maxWidth: 420,
                     display: "flex",
                     alignItems: "center"
@@ -542,7 +545,103 @@ export default function GoogleMap() {
 
 
                 </div>
+            </div> */}
+            <div className="header">
+                {/* Current Location */}
+                <button
+                    className="btn iconBtn"
+                    title="Go to my location"
+                    onClick={() => {
+                        if (!map || !navigator.geolocation) return;
+                        navigator.geolocation.getCurrentPosition((pos) => {
+                            const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                            map.panTo(loc);
+                            map.setZoom(15);
+                            setMarkerPos(loc);
+
+                            const geocoder = new window.google.maps.Geocoder();
+                            geocoder.geocode({ location: loc }, (results, status) => {
+                                if (status === window.google.maps.GeocoderStatus.OK && results?.[0]) {
+                                    const placeName = results[0].formatted_address || "Unknown Location";
+                                    lastPickedMetaRef.current = {
+                                        name: placeName,
+                                        formatted_address: results[0].formatted_address,
+                                        rating: undefined,
+                                        user_ratings_total: undefined,
+                                    };
+                                    setPickedPlace({
+                                        ...lastPickedMetaRef.current,
+                                        geometry: { location: new window.google.maps.LatLng(loc.lat, loc.lng) },
+                                    });
+                                } else {
+                                    console.error("Geocoding failed: ", status);
+                                }
+                            });
+
+                            setActivePlace(null);
+                        });
+                    }}
+                >
+                    <MdGpsFixed className="icon" />
+                    <span className="btnText">My location</span>
+                </button>
+
+                {/* Destination Search */}
+                <div className="field field--grow header__dest">
+                    <input
+                        ref={destInputRef}
+                        type="text"
+                        placeholder="Set destination (search a place)"
+                        className="input"
+                        aria-label="Destination"
+                    />
+                    <MdSearch className="field__icon" />
+                </div>
+
+                {/* Nearby + Radius + Controls */}
+                <div className="header__nearby">
+                    <div className="field field--grow">
+                        <input
+                            ref={nearbyInputRef}
+                            type="text"
+                            placeholder="Search nearby (e.g., hotel, cafe, mandir)"
+                            className="input"
+                            onKeyDown={handleNearbyKeyDown}
+                            aria-label="Nearby search"
+                        />
+                        <MdSearch className="field__icon" />
+                    </div>
+
+                    <label className="radius">
+                        <span className="radius__label">Radius</span>
+                        <input
+                            id="radius"
+                            type="number"
+                            value={radius}
+                            onChange={handleRadiusChange}
+                            min="100"
+                            max="5000"
+                            step="100"
+                            className="input radius__input"
+                            aria-label="Search radius in meters"
+                        />
+                        <span className="radius__unit">m</span>
+                    </label>
+
+                    <button
+                        className="btn iconBtn"
+                        title="Search nearby"
+                        onClick={() => runNearbySearch(nearbyInputRef.current?.value || "")}
+                    >
+                        <MdSearch className="icon" />
+                        <span className="btnText">Search</span>
+                    </button>
+
+                    <button className="btn" onClick={handlePlay}>Play</button>
+                    <button className="btn btn--ghost" onClick={handleStop}>Stop</button>
+                </div>
             </div>
+
 
             <div className="contentBox" style={{ position: "relative", height: "70vh", marginTop: 8 }}>
                 <Map
